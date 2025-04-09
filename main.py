@@ -49,7 +49,7 @@ def radar_plot(kpi):
         'Rotation des stocks': 3.75,
         'Coût transport/tonne': 50,
         'Taux fiabilité fournisseurs': 80,
-        'Marge brute': 22
+        'Taux marge brute': 22
     }
 
     # Préparation des données
@@ -65,7 +65,7 @@ def radar_plot(kpi):
                   references['Rotation des stocks'] / 4,
                   1 - (references['Coût transport/tonne'] - 40) / 30,
                   references['Taux fiabilité fournisseurs'] / 100,
-                  references['Marge brute'] / 30]
+                  references['Taux marge brute'] / 30]
 
     # Configuration du graphique
     fig = plt.figure(figsize=(10, 10))
@@ -80,22 +80,22 @@ def radar_plot(kpi):
     ref_values += ref_values[:1]
 
     # Création du radar plot
-    ax.plot(angles, kpi_values, 'o-', linewidth=2, label='Vos KPI', color='#1f77b4')
-    ax.fill(angles, kpi_values, alpha=0.25, color='#1f77b4')
-    ax.plot(angles, ref_values, 'o-', linewidth=2, label='Référence secteur', color='#2ca02c')
+    ax.plot(angles, kpi_values, 'o-', linewidth=2, label='Vos KPI', color='#FFA07A')  # Orange
+    ax.fill(angles, kpi_values, alpha=0.25, color='#FFA07A')
+    ax.plot(angles, ref_values, 'o-', linewidth=2, label='Référence secteur', color='#E2789F')  # Rose foncé
 
     # Annotations des valeurs
     for i, (angle, kpi_val, ref_val) in enumerate(zip(angles[:-1], kpi_values[:-1], ref_values[:-1])):
         # Annotation des KPI
         ax.annotate(f"{list(kpi.values())[i]:.1f}" + ('%' if i != 2 and i != 3 else ''),
                     xy=(angle, kpi_val), xytext=(10, 10), textcoords='offset points',
-                    bbox=dict(boxstyle='round,pad=0.5', fc='#1f77b4', alpha=0.8),
+                    bbox=dict(boxstyle='round,pad=0.5', fc='#FFA07A', alpha=0.8),
                     color='white')
 
         # Annotation des références
         ax.annotate(f"{list(references.values())[i]:.1f}" + ('%' if i != 2 and i != 3 else ''),
                     xy=(angle, ref_val), xytext=(10, -20), textcoords='offset points',
-                    bbox=dict(boxstyle='round,pad=0.5', fc='#2ca02c', alpha=0.8),
+                    bbox=dict(boxstyle='round,pad=0.5', fc='#E2789F', alpha=0.8),
                     color='white')
 
     # Personnalisation
