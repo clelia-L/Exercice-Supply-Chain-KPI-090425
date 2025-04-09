@@ -25,37 +25,50 @@ def generer_donnees_logistiques():
 def calculer_kpi(data):
     """Calcule les indicateurs clés de performance"""
     kpi = {
-        'Taux livraison à temps': f"{(data['commandes_livrees_a_temps'] / data['commandes']) * 100:.1f}%",
-        'Taux commandes parfaites': f"{(data['commandes_parfaites'] / data['commandes']) * 100:.1f}%",
-        'Rotation des stocks': f"{data['cout_biens_vendus'] / data['stock_moyen']:.2f}",
-        'Coût transport/tonne': f"{data['cout_total_transport'] / data['tonnage_total']:.2f} €/t",
-        'Taux fiabilité fournisseurs': f"{sum(data['delais_fournisseurs']) / len(data['delais_fournisseurs']) * 100:.1f}%",
-        'Marge brute': f"{(1 - (data['cout_biens_vendus'] / data['ventes_net'])) * 100:.1f}%"
+        'Taux livraison à temps': (data['commandes_livrees_a_temps'] / data['commandes']) * 100,
+        'Taux commandes parfaites': (data['commandes_parfaites'] / data['commandes']) * 100,
+        'Rotation des stocks': data['cout_biens_vendus'] / data['stock_moyen'],
+        'Coût transport/tonne': data['cout_total_transport'] / data['tonnage_total'],
+        'Taux fiabilité fournisseurs': sum(data['delais_fournisseurs']) / len(data['delais_fournisseurs']) * 100,
+        'Marge brute': (1 - (data['cout_biens_vendus'] / data['ventes_net'])) * 100
     }
     return kpi
 
 
-# --- Partie 3 : Visualisation Radar ---
+# --- Partie 3 : Visualisation Radar avec valeurs annotées ---
 def radar_plot(kpi):
-    """Génère un diagramme radar comparatif"""
+    """Génère un diagramme radar comparatif avec annotations"""
     # Configuration des données
     categories = ['Livraison\ntemps', 'Commandes\nparfaites', 'Rotation\nstocks',
                   'Coût\ntransport', 'Fiabilité\nfourn.', 'Marge\nbrute']
 
-    # Extraction et normalisation des valeurs
-    valeurs = [
-        float(kpi['Taux livraison à temps'].strip('%')) / 100,
-        float(kpi['Taux commandes parfaites'].strip('%')) / 100,
-        float(kpi['Rotation des stocks']) / 4,  # Normalisation
-        1 - (float(kpi['Coût transport/tonne'].split()[0]) - 40) / 30,  # Inversion échelle
-        float(kpi['Taux fiabilité fournisseurs'].strip('%')) / 100,
-        float(kpi['Marge brute'].strip('%')) / 30  # Normalisation
-    ]
+    # Références sectorielles (benchmarks)
+    references = {
+        'Taux livraison à temps': 85,
+        'Taux commandes parfaites': 80,
+        'Rotation des stocks': 3.75,
+        'Coût transport/tonne': 50,
+        'Taux fiabilité fournisseurs': 80,
+        'Marge brute': 22
+    }
 
-    references = [0.85, 0.80, 0.75, 0.70, 0.80, 0.25]  # Benchmarks sectoriels
+    # Préparation des données
+    kpi_values = [kpi['Taux livraison à temps'] / 100,
+                  kpi['Taux commandes parfaites'] / 100,
+                  kpi['Rotation des stocks'] / 4,
+                  1 - (kpi['Coût transport/tonne'] - 40) / 30,  # Inversion échelle
+                  kpi['Taux fiabilité fournisseurs'] / 100,
+                  kpi['Marge brute'] / 30]
+
+    ref_values = [references['Taux livraison à temps'] / 100,
+                  references['Taux commandes parfaites'] / 100,
+                  references['Rotation des stocks'] / 4,
+                  1 - (references['Coût transport/tonne'] - 40) / 30,
+                  references['Taux fiabilité fournisseurs'] / 100,
+                  references['Marge brute'] / 30]
 
     # Configuration du graphique
-    fig = plt.figure(figsize=(8, 8))
+    fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111, polar=True)
 
     # Angles pour chaque catégorie
@@ -63,18 +76,34 @@ def radar_plot(kpi):
     angles = np.concatenate((angles, [angles[0]]))
 
     # Tracé des données
-    valeurs += valeurs[:1]
-    references += references[:1]
+    kpi_values += kpi_values[:1]
+    ref_values += ref_values[:1]
 
-    ax.plot(angles, valeurs, 'o-', linewidth=2, label='Vos KPI')
-    ax.fill(angles, valeurs, alpha=0.25)
-    ax.plot(angles, references, 'o-', linewidth=2, label='Référence secteur', color='green')
+    # Création du radar plot
+    ax.plot(angles, kpi_values, 'o-', linewidth=2, label='Vos KPI', color='#1f77b4')
+    ax.fill(angles, kpi_values, alpha=0.25, color='#1f77b4')
+    ax.plot(angles, ref_values, 'o-', linewidth=2, label='Référence secteur', color='#2ca02c')
+
+    # Annotations des valeurs
+    for i, (angle, kpi_val, ref_val) in enumerate(zip(angles[:-1], kpi_values[:-1], ref_values[:-1])):
+        # Annotation des KPI
+        ax.annotate(f"{list(kpi.values())[i]:.1f}" + ('%' if i != 2 and i != 3 else ''),
+                    xy=(angle, kpi_val), xytext=(10, 10), textcoords='offset points',
+                    bbox=dict(boxstyle='round,pad=0.5', fc='#1f77b4', alpha=0.8),
+                    color='white')
+
+        # Annotation des références
+        ax.annotate(f"{list(references.values())[i]:.1f}" + ('%' if i != 2 and i != 3 else ''),
+                    xy=(angle, ref_val), xytext=(10, -20), textcoords='offset points',
+                    bbox=dict(boxstyle='round,pad=0.5', fc='#2ca02c', alpha=0.8),
+                    color='white')
 
     # Personnalisation
     ax.set_thetagrids(angles[:-1] * 180 / np.pi, categories)
     ax.set_ylim(0, 1)
     ax.set_rgrids([0.2, 0.4, 0.6, 0.8], angle=45)
-    plt.title('Comparaison des KPI logistiques\navec les références sectorielles', y=1.1)
+    plt.title('Comparaison des KPI logistiques avec les références sectorielles\n(valeurs affichées en chiffres)',
+              y=1.15, fontsize=14)
     plt.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
     plt.tight_layout()
     plt.show()
@@ -94,7 +123,16 @@ def analyse_complete():
     print(f"Date d'analyse: {datetime.now().strftime('%d/%m/%Y %H:%M')}\n")
 
     print("Principaux indicateurs:")
-    for nom, valeur in kpi.items():
+    formatted_kpi = {
+        'Taux livraison à temps': f"{kpi['Taux livraison à temps']:.1f}%",
+        'Taux commandes parfaites': f"{kpi['Taux commandes parfaites']:.1f}%",
+        'Rotation des stocks': f"{kpi['Rotation des stocks']:.2f}",
+        'Coût transport/tonne': f"{kpi['Coût transport/tonne']:.2f} €/t",
+        'Taux fiabilité fournisseurs': f"{kpi['Taux fiabilité fournisseurs']:.1f}%",
+        'Marge brute': f"{kpi['Marge brute']:.1f}%"
+    }
+
+    for nom, valeur in formatted_kpi.items():
         print(f"- {nom:<25}: {valeur:>10}")
 
     # 4. Visualisation radar
